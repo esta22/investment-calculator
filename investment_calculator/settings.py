@@ -81,7 +81,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'investment_db',
         'USER': 'root',  # 또는 생성한 사용자명
-        'PASSWORD': 'se1357',  # 실제 MySQL 비밀번호
+        'PASSWORD': '',  # 실제 MySQL 비밀번호
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {
@@ -132,3 +132,4 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
