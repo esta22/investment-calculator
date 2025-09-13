@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2종목 이상 계산기 결과</title>
+<style>
+    body {
+        font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: 0;
+        padding: 15px; /* PC 패딩 축소 */
+        background-color: #f8fafc;
+        color: #334155;
+        line-height: 1.6;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 25px; /* PC 패딩 축소 */
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px; /* 마진 축소 */
+        padding-bottom: 15px; /* 패딩 축소 */
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    h1 {
+        color: #1e293b;
+        margin: 0;
+        font-size: 1.8em; /* PC 크기 조정 */
+        font-weight: 700;
+    }
+
+    .home-btn {
+        padding: 10px 20px; /* 패딩 축소 */
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .home-btn:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+    }
+
+    /* 결과 요약 섹션 */
+    .result-summary {
+        background: #f8fafc;
+        padding: 20px; /* PC 크기 조정 */
+        border-radius: 16px;
+        margin-bottom: 25px; /* 마진 축소 */
+        border: 1px solid #e2e8f0;
+    }
+
+    .summary-title {
+        text-align: center;
+        margin-bottom: 20px; /* 마진 축소 */
+        color: #1e293b;
+        font-size: 1.4em; /* PC 크기 조정 */
+        font-weight: 700;
+    }
+
+    .result-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* PC 그리드 최소 크기 조정 */
+        gap: 15px; /* 갭 축소 */
+        margin-bottom: 15px; /* 마진 축소 */
+    }
+
+    .result-card {
+        background: white;
+        padding: 20px; /* PC 패딩 축소 */
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        border: 1px solid #f1f5f9;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .result-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .result-card h3 {
+        margin-top: 0;
+        color: #64748b;
+        font-size: 1em; /* PC 폰트 크기 조정 */
+        font-weight: 600;
+        margin-bottom: 10px; /* 마진 축소 */
+    }
+
+    .result-value {
+        font-size: 1.5em; /* PC 값 크기 조정 */
+        font-weight: 700;
+        color: #1e293b;
+        margin: 5px 0; /* 마진 축소 */
+    }
+
+    .currency {
+        font-size: 0.8em; /* PC 폰트 크기 조정 */
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .positive {
+        color: #10b981;
+    }
+
+    .negative {
+        color: #ef4444;
+    }
+
+    /* 거래 내역 테이블 */
+    .transaction-section {
+        margin-top: 30px; /* 마진 축소 */
+    }
+
+    .section-title {
+        color: #1e293b;
+        font-size: 1.6em; /* 세부 거래 내역 제목 크기 키움 */
+        font-weight: 700;
+        margin-bottom: 15px; /* 마진 축소 */
+        padding-bottom: 8px; /* 패딩 축소 */
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .transaction-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    }
+
+    .transaction-table th {
+        background: #3b82f6;
+        color: white;
+        padding: 14px; /* 패딩 키움 */
+        text-align: left;
+        font-weight: 600;
+        font-size: 1em; /* 폰트 크기 키움 */
+    }
+
+    .transaction-table td {
+        padding: 12px 14px; /* 패딩 키움 */
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.95em; /* 폰트 크기 키움 */
+    }
+
+    /* 날짜는 한 줄로 표시 */
+    .transaction-table .date-column {
+        white-space: nowrap;
+    }
+
+    .transaction-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .transaction-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    /* 반응형 디자인 - 모바일 최적화 */
+    @media (max-width: 768px) {
+        .container {
+            padding: 10px;
+        }
+
+        .header {
+            flex-direction: column;
+            gap: 10px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.4em; /* 모바일 h1 크기 조정 */
+        }
+
+        .home-btn {
+            padding: 8px 16px;
+            font-size: 0.8em;
+        }
+
+        .result-summary {
+            padding: 15px;
+        }
+
+        .summary-title {
+            font-size: 1.1em;
+        }
+
+        /* 모바일에서 2x3 그리드로 변경 */
+        .result-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .result-card {
+            padding: 12px;
+        }
+
+        .result-card h3 {
+            font-size: 0.8em;
+        }
+
+        .result-value {
+            font-size: 1.1em; /* 모바일 값 크기 조정 */
+        }
+
+        .currency {
+            font-size: 0.7em;
+        }
+
+        .transaction-table {
+            font-size: 0.8em; /* 모바일 테이블 폰트 크기 조정 */
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 8px; /* 모바일 테이블 패딩 조정 */
+        }
+    }
+
+    @media (max-width: 480px) {
+        .result-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+    }
+
+    /* 숫자 포맷팅 */
+    .number-format {
+        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+        letter-spacing: -0.5px;
+    }
+
+    /* 배지 스타일 - 우선순위별 색상 */
+    .priority-badge {
+        color: white;
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-size: 0.7em;
+        font-weight: 600;
+        margin-left: 5px;
+    }
+
+    .priority-1 {
+        background: #ef4444; /* 빨간색 */
+    }
+
+    .priority-2 {
+        background: #f59e0b; /* 주황색 */
+    }
+
+    .priority-3 {
+        background: #10b981; /* 녹색 */
+    }
+
+    /* 로딩 애니메이션 */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-card, .transaction-table {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    /* 아이콘 스타일 */
+    .card-icon {
+        font-size: 1em;
+        margin-right: 5px;
+    }
+
+    /* 보유 현황 추가 스타일 */
+    .holdings-value {
+        font-size: 1em;
+        color: #3b82f6;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+
+    .holdings-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    .holdings-info {
+        text-align: center;
+    }
+
+    .shares-whole {
+        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 투자 계산 결과</h1>
+            <a href="{% url 'stock2' %}" class="home-btn">← 다시 계산하기</a>
+        </div>
+
+        {% if final_result %}
+        <div class="result-summary">
+            <h2 class="summary-title">📈 최종 결과</h2>
+            <div class="result-grid">
+                <div class="result-card">
+                    <h3><span class="card-icon">💰</span>총 투자금액</h3>
+                    <div class="result-value number-format">
+                        {{ final_result.final_total_investment|floatformat:0 }}원
+                    </div>
+                    <div class="currency">전체 투자 자본</div>
+                </div>
+
+                <div class="result-card">
+                    <h3><span class="card-icon">📊</span>최종 평가금액</h3>
+                    <div class="result-value number-format">
+                        {{ final_result.final_total_assets|floatformat:0 }}원
+                    </div>
+                    <div class="currency">주식 + 현금 평가액</div>
+                </div>
+
+                <div class="result-card">
+                    <h3><span class="card-icon">📈</span>수익률</h3>
+                    <div class="result-value {% if final_result.final_profit_rate > 0 %}positive{% else %}negative{% endif %}">
+                        {{ final_result.final_profit_rate|floatformat:2 }}%
+                    </div>
+                    <div class="currency">{% if final_result.final_profit_rate > 0 %}성장률{% else %}하락률{% endif %}</div>
+                </div>
+
+                <div class="result-card">
+                    <h3><span class="card-icon">💵</span>수익금액</h3>
+                    <div class="result-value number-format {% if final_result.final_profit_amount > 0 %}positive{% else %}negative{% endif %}">
+                        {{ final_result.final_profit_amount|floatformat:0 }}원
+                    </div>
+                    <div class="currency">{% if final_result.final_profit_amount > 0 %}순이익{% else %}순손실{% endif %}</div>
+                </div>
+
+                <div class="result-card">
+                    <h3><span class="card-icon">🏦</span>현금 잔액</h3>
+                    <div class="result-value number-format">
+                        {{ final_result.final_cash|floatformat:0 }}원
+                    </div>
+                    <div class="currency">미투자 현금</div>
+                </div>
+
+                <div class="result-card">
+                    <h3><span class="card-icon">📦</span>주식 평가금액</h3>
+                    <div class="result-value number-format">
+                        {{ final_result.final_stock_value|floatformat:0 }}원
+                    </div>
+                    <div class="currency">보유 주식 총액</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if records %}
+        <div class="transaction-section">
+            <h2 class="section-title">📋 세부 거래 내역</h2>
+            <div class="table-container">
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th>거래 내용</th>
+                            <th>주가(USD)</th>
+                            <th>구매 수량</th>
+                            <th>보유 수량</th>
+                            <th>구매 금액</th>
+                            <th>현금 잔액</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            <td class="date-column">
+                                {{ record.date }}
+                            </td>
+                            <td>
+                                {{ record.action }}
+                                {% if '우선순위' in record.action %}
+                                    {% if '우선순위 1' in record.action %}
+                                        <span class="priority-badge priority-1">P1</span>
+                                    {% elif '우선순위 2' in record.action %}
+                                        <span class="priority-badge priority-2">P2</span>
+                                    {% elif '우선순위 3' in record.action %}
+                                        <span class="priority-badge priority-3">P3</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>${{ record.price|floatformat:2 }}</td>
+                            <td class="shares-whole">{{ record.shares_bought|floatformat:0 }}주</td>
+                            <td class="shares-whole"><strong>{{ record.shares_held|floatformat:0 }}주</strong></td>
+                            <td class="number-format">{{ record.purchase_amount|floatformat:0 }}원</td>
+                            <td class="number-format">{{ record.cash_krw|floatformat:0 }}원</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if final_result and final_result.ticker_details %}
+        <div class="result-summary" style="margin-top: 30px;">
+            <h2 class="summary-title">📦 최종 보유 현황</h2>
+            <div class="result-grid">
+                {% for ticker, details in final_result.ticker_details.items %}
+                <div class="result-card">
+                    <h3><span class="card-icon">📊</span>{{ ticker }} 보유 현황</h3>
+                    <div class="holdings-container">
+                        <div>
+                            <div class="result-value shares-whole">{{ details.shares|floatformat:0 }}주</div>
+                            <div class="currency">보유 수량</div>
+                            <div class="currency">(${{ details.price|floatformat:2 }}/주)</div>
+                        </div>
+                        <div class="holdings-info">
+                            <div class="holdings-value number-format">
+                                {{ details.value|floatformat:0 }}원
+                            </div>
+                            <div class="currency">평가 금액</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // 숫자 포맷팅 - 천 단위 콤마 추가
+        document.addEventListener('DOMContentLoaded', function() {
+            const numberElements = document.querySelectorAll('.number-format');
+            numberElements.forEach(el => {
+                let text = el.textContent;
+                // 숫자만 추출해서 콤마 추가
+                text = text.replace(/\d+/g, function(num) {
+                    return parseInt(num).toLocaleString();
+                });
+                el.textContent = text;
+            });
+
+            // 테이블 행에 애니메이션 추가
+            const tableRows = document.querySelectorAll('.transaction-table tbody tr');
+            tableRows.forEach((row, index) => {
+                row.style.animationDelay = `${index * 0.05}s`;
+            });
+        });
+    </script>
+</body>
+</html>
