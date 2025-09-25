@@ -9,7 +9,7 @@ from .models import TickerViewCount
 from django.db.models import F
 from django.utils import translation
 from django.conf import settings
-from django.utils.translation import gettext as _
+
 
 
 def set_language_from_url(request):
@@ -325,5 +325,6 @@ def increase_view_count(ticker):
 
     except Exception as e:
         print(f"조회수 증가 중 오류: {e}")
+
 
 
