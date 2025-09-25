@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 from calculator.models import StockData
 from .models import AllTimeHigh
 from django.utils import translation
-from django.middleware.locale import LocaleMiddleware
+
 
 
 def set_language_from_url(request):
@@ -564,5 +564,6 @@ class Stock2ResultView(View):
         stock_data = StockData.objects.filter(
             ticker=ticker, date__lte=date
         ).order_by('-date').first()
+
 
         return float(stock_data.close_price) if stock_data else None
