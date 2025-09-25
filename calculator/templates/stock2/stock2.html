@@ -1,0 +1,908 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans "2종목 이상 계산기" %} - {% trans "월적립 주가수익률 계산기" %}</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        .home-btn {
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .home-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+        .language-selector select {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: white;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-size: 0.9em;
+        }
+        input, select {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            background: white;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        .condition-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4ff;
+            border-radius: 8px;
+            border: 1px solid #cce5ff;
+        }
+        .condition-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .condition-section h2 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.2em;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .priority-select {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .priority-select select {
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .remove-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .remove-btn:hover {
+            background: #c0392b;
+        }
+        .basic-add-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        .basic-add-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #basic-add-investment-btn {
+            background: #4caf50;
+            color: white;
+        }
+        #basic-add-investment-btn:hover {
+            background: #43a047;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+        }
+        #basic-add-condition-btn {
+            background: #3498db;
+            color: white;
+        }
+        #basic-add-condition-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+        .additional-condition {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4ff;
+            border-radius: 8px;
+            border: 1px solid #cce5ff;
+        }
+        .additional-condition h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .remove-condition {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .additional-investment {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9f7e9;
+            border-radius: 8px;
+            border: 1px solid #c3e6c3;
+        }
+        .additional-investment h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .remove-investment {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .calculate-btn-container {
+            margin-top: 20px;
+            text-align: center;
+            position: relative;
+        }
+        .calculate-btn {
+            padding: 14px 30px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+            width: 100%;
+        }
+        .calculate-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        .condition-output {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f5f9ff;
+            border-radius: 8px;
+            border: 1px solid #d0e5ff;
+        }
+        .condition-output h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+        }
+        .condition-text {
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            font-size: 1em;
+            line-height: 1.6;
+            min-height: 80px;
+        }
+        .highlight {
+            color: #3498db;
+            font-weight: 600;
+        }
+        .form-group.comparison-group {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 18px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .header-right {
+                width: 100%;
+                justify-content: flex-end; /* 수정 */
+            }
+            .home-btn {
+                position: static;
+            }
+            .form-container, .condition-form {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            input, select {
+                padding: 10px;
+            }
+            .calculate-btn {
+                padding: 13px 25px;
+            }
+            .condition-header {
+                align-items: center;
+            }
+            .action-buttons {
+                gap: 8px;
+            }
+            .remove-btn {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+            .basic-add-buttons {
+                flex-direction: row;
+                justify-content: flex-end;
+            }
+            .basic-add-btn {
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+        }
+        @media (max-width: 480px) {
+            .condition-header {
+                flex-direction: row;
+                align-items: center;
+            }
+            .condition-section h2 {
+                font-size: 1.2em;
+            }
+            .remove-btn {
+                padding: 5px 8px;
+                font-size: 0.75em;
+            }
+            .basic-add-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .basic-add-btn {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<html lang="{{ LANGUAGE_CODE|default:'ko' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans "2종목+ 계산기" %}</title>
+    <style>
+        .language-selector select {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{% trans "2종목+ 계산기" %}</h1>
+            <div class="header-right">
+                <div class="language-selector">
+                    <form action="{% url 'set_language' %}" method="post">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.get_full_path|default:'/' }}" />
+                        <select name="language" onchange="this.form.submit()">
+                            <option value="ko" {% if LANGUAGE_CODE == 'ko' %}selected{% endif %}>한국어</option>
+                            <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+                        </select>
+                    </form>
+                </div>
+                <a href="{% url 'calculator' %}" class="home-btn">{% trans "홈으로" %}</a>
+            </div>
+        </div>
+
+        <form method="post" id="main-form">
+            {% csrf_token %}
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="id_ticker">📊 {% trans "월적립 티커 코드" %}</label>
+                    <input type="text" name="ticker" id="id_ticker" placeholder="{% trans '예: AAPL, TSLA, MSFT' %}" required value="{{ form_data.ticker|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_initial_capital">💰 {% trans "초기자금 (원)" %}</label>
+                    <input type="number" name="initial_capital" id="id_initial_capital" placeholder="{% trans '예: 1000000' %}" required value="{{ form_data.initial_capital|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_monthly_investment">💵 {% trans "월적립액 (원)" %}</label>
+                    <input type="number" name="monthly_investment" id="id_monthly_investment" placeholder="{% trans '예: 100000' %}" required value="{{ form_data.monthly_investment|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_start_date">📅 {% trans "시작일" %}</label>
+                    <input type="date" name="start_date" id="id_start_date" required value="{{ form_data.start_date|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_end_date">📅 {% trans "종료일" %}</label>
+                    <input type="date" name="end_date" id="id_end_date" required value="{{ form_data.end_date|default:'' }}">
+                </div>
+            </div>
+
+            <div class="basic-add-buttons">
+                <button type="button" class="basic-add-btn" id="basic-add-investment-btn">{% trans "적립 종목 추가" %}</button>
+                <button type="button" class="basic-add-btn" id="basic-add-condition-btn">{% trans "조건 설정 추가" %}</button>
+            </div>
+
+            <div id="additional-conditions"></div>
+            <div id="additional-investments"></div>
+
+            <div class="calculate-btn-container">
+                <button type="submit" class="calculate-btn">🚀 {% trans "계산하기" %}</button>
+            </div>
+        </form>
+
+        <div class="condition-output">
+            <h2>📋 {% trans "조건식" %}</h2>
+            <div class="condition-text" id="condition-text">
+                {% trans "조건을 설정하면 결과가 여기에 표시됩니다." %}
+            </div>
+        </div>
+
+        {% if error %}
+            <div class="error">❌ {{ error }}</div>
+        {% endif %}
+    </div>
+
+    <script>
+        // 번역 텍스트 객체 - Django 템플릿 태그 사용
+        const translatedTexts = {
+            'ticker_code': '{% trans "티커코드" %}',
+            'start_date': '{% trans "시작일" %}',
+            'end_date': '{% trans "종료일" %}',
+            'buy_with_initial': `{% blocktrans with start_date="HIGHLIGHT_START" end_date="HIGHLIGHT_END" ticker="HIGHLIGHT_TICKER" initial_capital="HIGHLIGHT_CAPITAL" monthly_investment="HIGHLIGHT_MONTHLY" %}{{ start_date }} ~ {{ end_date }} 동안 <span class="highlight">{{ ticker }}</span>를 초기자금 {{ initial_capital }}원과 월적립액 {{ monthly_investment }}원으로 매수합니다{% endblocktrans %}`,
+            'buy_monthly': `{% blocktrans with ticker="HIGHLIGHT_TICKER" monthly_investment="HIGHLIGHT_MONTHLY" %}하고, <span class="highlight">{{ ticker }}</span>도 월적립액 {{ monthly_investment }}원으로 매수합니다{% endblocktrans %}`,
+            'condition_1': `{% blocktrans with ticker="HIGHLIGHT_TICKER" percent="HIGHLIGHT_PERCENT" %}만약 <span class="highlight">{{ ticker }}</span>이(가) <span class="highlight">{{ percent }}</span> 이상 일경우 우선 매수합니다{% endblocktrans %}`,
+            'condition_2': `{% blocktrans with ticker="HIGHLIGHT_TICKER" percent="HIGHLIGHT_PERCENT" %}만약 <span class="highlight">{{ ticker }}</span>이(가) <span class="highlight">{{ percent }}</span> 이하 일경우 우선 매수합니다{% endblocktrans %}`,
+            'condition_3': `{% blocktrans with ticker="HIGHLIGHT_TICKER" percent="HIGHLIGHT_PERCENT" %}만약 <span class="highlight">{{ ticker }}</span>이(가) <span class="highlight">전고점 대비 {{ percent }}%이상 </span>하락된 가격일 경우 우선 매수합니다{% endblocktrans %}`,
+            'priority': `{% blocktrans with priority="HIGHLIGHT_PRIORITY" %}(우선순위{{ priority }}){% endblocktrans %}`,
+            'number': '{% trans "숫자" %}',
+            'more_than_three_conditions': '{% trans "조건 설정은 3개까지만 가능합니다" %}',
+            'more_than_two_investments': '{% trans "적립 종목은 2개까지 가능합니다" %}',
+            'input_here': '{% trans "여기를 입력하세요" %}',
+            'select_priority': '{% trans "조건을 설정한 경우 우선순위를 선택해주세요" %}',
+            'priority_duplicate': '{% trans "우선순위는 중복될 수 없습니다" %}',
+            'priority_mixed': '{% trans "모든 조건의 우선순위를 선택해주세요" %}',
+            'specific': '{% trans "목표값" %}',
+            'high': '{% trans "전고점 대비 하락" %}',
+            'above': '{% trans "이상" %}',
+            'below': '{% trans "이하" %}',
+            'remove': '{% trans "삭제" %}',
+            'priority_text': '{% trans "우선순위" %}',
+            'ticker_code_number': '{% trans "티커 코드" %}',
+            'condition_type': '{% trans "조건 유형" %}',
+            'target_value': '{% trans "목표값" %}',
+            'percent': '{% trans "퍼센트" %}',
+            'comparison_condition': '{% trans "비교 조건" %}',
+            'monthly_ticker_code': '{% trans "월적립 티커 코드" %}',
+            'monthly_investment_amount': '{% trans "월적립액" %}',
+            'currency_unit': '{% trans "원" %}',
+            'condition_settings': '{% trans "조건 설정" %}',
+            'additional_investment': '{% trans "추가 적립 종목" }'
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 기본 날짜 설정
+            const today = new Date();
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(today.getFullYear() - 1);
+
+            const startDateInput = document.getElementById('id_start_date');
+            if (!startDateInput.value) {
+                startDateInput.value = oneYearAgo.toISOString().split('T')[0];
+            }
+
+            const endDateInput = document.getElementById('id_end_date');
+            if (!endDateInput.value) {
+                endDateInput.value = today.toISOString().split('T')[0];
+            }
+
+            // 상태 변수들
+            let conditionCount = 0;
+            let investmentCount = 0;
+            const additionalConditions = document.getElementById('additional-conditions');
+            const additionalInvestments = document.getElementById('additional-investments');
+            const basicAddInvestmentBtn = document.getElementById('basic-add-investment-btn');
+            const basicAddConditionBtn = document.getElementById('basic-add-condition-btn');
+            const formData = {{ form_data|default:'{}'|safe }};
+
+            // 숫자 포맷팅 함수 - 언어에 따라 다르게 처리
+            function formatNumber(num) {
+                if (!num) return '0';
+                // 현재 언어에 따라 로케일 설정
+                const locale = '{{ LANGUAGE_CODE|default:"ko" }}' === 'en' ? 'en-US' : 'ko-KR';
+                return Number(num).toLocaleString(locale);
+            }
+
+            // 이벤트 리스너 설정
+            basicAddInvestmentBtn.addEventListener('click', addInvestment);
+            basicAddConditionBtn.addEventListener('click', addCondition);
+
+            // 투자 항목 추가 함수
+            function addInvestment() {
+                if (investmentCount >= 1) {
+                    alert(translatedTexts.more_than_two_investments);
+                    return;
+                }
+                investmentCount++;
+                const investmentNumber = investmentCount + 1;
+
+                const investmentDiv = document.createElement('div');
+                investmentDiv.className = 'additional-investment';
+                investmentDiv.innerHTML = `
+                    <h3>
+                        {% trans "추가 적립 종목" %}
+                        <button type="button" class="remove-investment">${translatedTexts.remove}</button>
+                    </h3>
+                    <div class="form-container">
+                        <div class="form-group">
+                            <label for="id_investment_ticker_${investmentNumber}">📊 ${translatedTexts.monthly_ticker_code} ${investmentNumber}</label>
+                            <input type="text" id="id_investment_ticker_${investmentNumber}" name="investment_ticker_${investmentNumber}" placeholder="{% trans '예: NVDA, AMZN' %}" value="">
+                        </div>
+                        <div class="form-group">
+                            <label for="id_monthly_investment_${investmentNumber}">💵 ${translatedTexts.monthly_investment_amount} ${investmentNumber} (${translatedTexts.currency_unit})</label>
+                            <input type="number" id="id_monthly_investment_${investmentNumber}" name="monthly_investment_${investmentNumber}" placeholder="{% trans '예: 50000' %}" value="">
+                        </div>
+                    </div>
+                `;
+
+                additionalInvestments.appendChild(investmentDiv);
+
+                // 입력 이벤트 리스너 추가
+                const inputs = investmentDiv.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.addEventListener('input', updateConditionText);
+                });
+
+                updateConditionText();
+            }
+
+            // 조건 추가 함수
+            function addCondition() {
+                if (conditionCount >= 3) {
+                    alert(translatedTexts.more_than_three_conditions);
+                    return;
+                }
+                conditionCount++;
+                const conditionNumber = conditionCount;
+                const conditionDiv = document.createElement('div');
+                conditionDiv.className = 'additional-condition';
+                conditionDiv.dataset.conditionId = conditionNumber;
+                conditionDiv.innerHTML = `
+                    <h3>
+                        {% trans "조건 설정" %} ${conditionNumber}
+                        <div class="action-buttons">
+                            <div class="priority-select">
+                                <span>${translatedTexts.priority_text} :</span>
+                                <select class="priority-dropdown" id="id_priority_${conditionNumber}" name="priority_${conditionNumber}">
+                                    <option value="none">none</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+                            <button type="button" class="remove-condition">${translatedTexts.remove}</button>
+                        </div>
+                    </h3>
+                    <div class="condition-form">
+                        <div class="form-group">
+                            <label for="id_condition_ticker_${conditionNumber}">${translatedTexts.ticker_code_number} ${conditionNumber}</label>
+                            <input type="text" id="id_condition_ticker_${conditionNumber}" name="condition_ticker_${conditionNumber}" placeholder="{% trans '예: GOOGL, NFLX' %}" value="">
+                        </div>
+                        <div class="form-group">
+                            <label for="id_condition_type_${conditionNumber}">${translatedTexts.condition_type}</label>
+                            <select id="id_condition_type_${conditionNumber}" name="condition_type_${conditionNumber}">
+                                <option value="specific">${translatedTexts.specific}</option>
+                                <option value="high">${translatedTexts.high}</option>
+                            </select>
+                        </div>
+                        <div class="form-group percent-group">
+                            <label for="id_percent_${conditionNumber}">${translatedTexts.percent}</label>
+                            <input type="number" id="id_percent_${conditionNumber}" name="percent_${conditionNumber}" placeholder="{% trans '예: 10' %}" value="10" step="0.1">
+                        </div>
+                        <div class="form-group comparison-group">
+                            <label for="id_comparison_${conditionNumber}">${translatedTexts.comparison_condition}</label>
+                            <select id="id_comparison_${conditionNumber}" name="comparison_${conditionNumber}">
+                                <option value="above">${translatedTexts.above}</option>
+                                <option value="below">${translatedTexts.below}</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                additionalConditions.appendChild(conditionDiv);
+
+                const prioritySelect = conditionDiv.querySelector(`#id_priority_${conditionNumber}`);
+                prioritySelect.addEventListener('change', updateConditionText);
+
+                const conditionTypeSelect = conditionDiv.querySelector(`#id_condition_type_${conditionNumber}`);
+                const percentLabelElem = conditionDiv.querySelector('.percent-group label');
+                const comparisonGroupElem = conditionDiv.querySelector('.comparison-group');
+
+                conditionTypeSelect.addEventListener('change', function() {
+                    if (this.value === 'specific') {
+                        percentLabelElem.textContent = translatedTexts.target_value;
+                        comparisonGroupElem.style.display = 'flex';
+                    } else {
+                        percentLabelElem.textContent = translatedTexts.percent;
+                        comparisonGroupElem.style.display = 'none';
+                    }
+                    updateConditionText();
+                });
+
+                // 초기 상태 설정
+                if (conditionTypeSelect.value === 'specific') {
+                    percentLabelElem.textContent = translatedTexts.target_value;
+                    comparisonGroupElem.style.display = 'flex';
+                } else {
+                    comparisonGroupElem.style.display = 'none';
+                }
+
+                const inputs = conditionDiv.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    input.addEventListener('input', updateConditionText);
+                    input.addEventListener('change', updateConditionText);
+                });
+
+                const removeBtn = conditionDiv.querySelector('.remove-condition');
+                removeBtn.addEventListener('click', function() {
+                    conditionDiv.remove();
+                    conditionCount--;
+                    renumberConditions();
+                    updateConditionText();
+                });
+
+                updateConditionText();
+            }
+
+            // 조건 재번호 매기기 함수도 추가
+            function renumberConditions() {
+                const conditionDivs = document.querySelectorAll('.additional-condition');
+                conditionDivs.forEach((div, index) => {
+                    const newConditionNumber = index + 1;
+                    div.dataset.conditionId = newConditionNumber;
+                    const header = div.querySelector('h3');
+                    if (header) {
+                        header.innerHTML = `
+                            {% trans "조건 설정" %} ${newConditionNumber}
+                            <div class="action-buttons">
+                                <div class="priority-select">
+                                    <span>${translatedTexts.priority_text} :</span>
+                                    <select class="priority-dropdown" id="id_priority_${newConditionNumber}" name="priority_${newConditionNumber}">
+                                        <option value="none">none</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="remove-condition">${translatedTexts.remove}</button>
+                            </div>
+                        `;
+                    }
+
+                    const labels = div.querySelectorAll('label');
+                    const inputs = div.querySelectorAll('input, select');
+
+                    labels.forEach(label => {
+                        const oldFor = label.htmlFor;
+                        const newFor = oldFor.replace(/\d+$/, newConditionNumber);
+                        label.htmlFor = newFor;
+                        const originalText = label.getAttribute('data-original-text') || label.textContent.trim();
+                        label.setAttribute('data-original-text', originalText);
+                        label.textContent = originalText.replace(/\d+$/, newConditionNumber);
+                    });
+
+                    inputs.forEach(input => {
+                        const oldId = input.id;
+                        const oldName = input.name;
+                        input.id = oldId.replace(/\d+$/, newConditionNumber);
+                        input.name = oldName.replace(/\d+$/, newConditionNumber);
+                    });
+                });
+                conditionCount = conditionDivs.length;
+            }
+
+            // 조건 텍스트 업데이트 함수
+            function updateConditionText() {
+                const ticker = document.getElementById('id_ticker').value || translatedTexts.ticker_code;
+                const initialCapital = document.getElementById('id_initial_capital').value || '0';
+                const monthlyInvestment = document.getElementById('id_monthly_investment').value || '0';
+                const startDate = document.getElementById('id_start_date').value || translatedTexts.start_date;
+                const endDate = document.getElementById('id_end_date').value || translatedTexts.end_date;
+
+                const formattedInitialCapital = formatNumber(initialCapital);
+                const formattedMonthlyInvestment = formatNumber(monthlyInvestment);
+
+                let conditionText = translatedTexts.buy_with_initial
+                    .replace('HIGHLIGHT_START', startDate)
+                    .replace('HIGHLIGHT_END', endDate)
+                    .replace('HIGHLIGHT_TICKER', ticker)
+                    .replace('HIGHLIGHT_CAPITAL', formattedInitialCapital)
+                    .replace('HIGHLIGHT_MONTHLY', formattedMonthlyInvestment);
+
+                const investmentInputs = document.querySelectorAll('.additional-investment input');
+                if (investmentInputs.length > 0) {
+                    const investmentTicker2 = document.getElementById('id_investment_ticker_2')?.value || translatedTexts.ticker_code + '2';
+                    const monthlyInvestment2 = document.getElementById('id_monthly_investment_2')?.value || '0';
+                    const formattedMonthlyInvestment2 = formatNumber(monthlyInvestment2);
+                    conditionText += translatedTexts.buy_monthly
+                        .replace('HIGHLIGHT_TICKER', investmentTicker2)
+                        .replace('HIGHLIGHT_MONTHLY', formattedMonthlyInvestment2);
+                }
+                const additionalConditionDivs = document.querySelectorAll('.additional-condition');
+                additionalConditionDivs.forEach((div) => {
+                    const conditionNumber = div.dataset.conditionId;
+                    const conditionTicker = div.querySelector(`#id_condition_ticker_${conditionNumber}`).value || translatedTexts.ticker_code_number + conditionNumber;
+                    const conditionType = div.querySelector(`#id_condition_type_${conditionNumber}`).value;
+                    const conditionPercent = div.querySelector(`#id_percent_${conditionNumber}`).value || translatedTexts.number;
+                    const conditionPriority = div.querySelector(`#id_priority_${conditionNumber}`).value;
+                    if (conditionTicker && conditionPercent) {
+                        let conditionLine = '';
+                        if (conditionType === 'specific') {
+                            const conditionComparison = div.querySelector(`#id_comparison_${conditionNumber}`).value;
+                            if (conditionComparison === 'above') {
+                                conditionLine = translatedTexts.condition_1;
+                            } else {
+                                conditionLine = translatedTexts.condition_2;
+                            }
+                        } else {
+                            conditionLine = translatedTexts.condition_3;
+                        }
+                        conditionLine = conditionLine
+                            .replace('HIGHLIGHT_TICKER', conditionTicker)
+                            .replace('HIGHLIGHT_PERCENT', conditionPercent);
+                        if (conditionPriority !== 'none') {
+                            const priorityText = translatedTexts.priority.replace('HIGHLIGHT_PRIORITY', conditionPriority);
+                            conditionLine += ` ${priorityText}`;
+                        }
+                        conditionText += '<br>' + conditionLine;
+                    }
+                });
+                document.getElementById('condition-text').innerHTML = conditionText;
+            }
+            document.addEventListener('input', function(event) {
+                if (event.target.closest('.form-container') || event.target.closest('.additional-condition') || event.target.closest('.additional-investment')) {
+                    updateConditionText();
+                }
+            });
+            document.addEventListener('change', function(event) {
+                if (event.target.closest('.form-container') || event.target.closest('.additional-condition') || event.target.closest('.additional-investment')) {
+                    updateConditionText();
+                }
+            });
+            document.addEventListener('click', function(event) {
+                const target = event.target;
+                if (target.classList.contains('remove-condition') || target.classList.contains('remove-investment')) {
+                    const parentDiv = target.closest('.additional-condition') || target.closest('.additional-investment');
+                    if (parentDiv) {
+                        parentDiv.remove();
+                        if (target.classList.contains('remove-condition')) {
+                            conditionCount--;
+                            renumberConditions();
+                        } else if (target.classList.contains('remove-investment')) {
+                            investmentCount--;
+                        }
+                        updateConditionText();
+                    }
+                }
+            });
+
+            // 폼 제출 이벤트 리스너 통합
+            const form = document.getElementById('main-form');
+            form.addEventListener('submit', function(event) {
+                // 기본 유효성 검사
+                if (!validateForm()) {
+                    event.preventDefault();
+                    return;
+                }
+
+                // 우선순위 유효성 검사
+                const priorityValues = [];
+                let hasNone = false;
+                let hasPriority = false;
+                const additionalPrioritySelects = document.querySelectorAll('.additional-condition .priority-dropdown');
+
+                additionalPrioritySelects.forEach(select => {
+                    if (select.value === 'none') {
+                        hasNone = true;
+                    } else {
+                        priorityValues.push(select.value);
+                        hasPriority = true;
+                    }
+                });
+
+                if (additionalPrioritySelects.length > 0 && hasPriority === false) {
+                    event.preventDefault();
+                    alert(translatedTexts.select_priority);
+                    return;
+                }
+
+                if (hasPriority) {
+                    const uniqueValues = new Set(priorityValues);
+                    if (uniqueValues.size !== priorityValues.length) {
+                        event.preventDefault();
+                        alert(translatedTexts.priority_duplicate);
+                        return;
+                    }
+                }
+
+                if (hasNone && hasPriority) {
+                    event.preventDefault();
+                    alert(translatedTexts.priority_mixed);
+                    return;
+                }
+            });
+
+            function validateForm() {
+                let isValid = true;
+                const investmentTicker2Input = document.getElementById('id_investment_ticker_2');
+                const monthlyInvestment2Input = document.getElementById('id_monthly_investment_2');
+
+                // 추가 적립 종목 폼 검증
+                if (investmentTicker2Input && !investmentTicker2Input.value.trim()) {
+                    showError(investmentTicker2Input, translatedTexts.input_here);
+                    isValid = false;
+                } else if (investmentTicker2Input) {
+                    clearError(investmentTicker2Input);
+                }
+
+                if (monthlyInvestment2Input && !monthlyInvestment2Input.value.trim()) {
+                    showError(monthlyInvestment2Input, translatedTexts.input_here);
+                    isValid = false;
+                } else if (monthlyInvestment2Input) {
+                    clearError(monthlyInvestment2Input);
+                }
+
+                // 조건 설정 폼 검증
+                const conditionInputs = document.querySelectorAll('[id^="id_condition_ticker_"]');
+                conditionInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        showError(input, translatedTexts.input_here);
+                        isValid = false;
+                    } else {
+                        clearError(input);
+                    }
+                });
+                return isValid;
+            }
+
+            function showError(input, message) {
+                clearError(input);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.style.color = 'red';
+                errorDiv.style.fontSize = '12px';
+                errorDiv.style.marginTop = '5px';
+                errorDiv.textContent = message;
+                input.parentNode.appendChild(errorDiv);
+                input.style.borderColor = 'red';
+            }
+
+            function clearError(input) {
+                input.style.borderColor = '';
+                const errorDiv = input.parentNode.querySelector('.error-message');
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+            }
+
+            document.addEventListener('input', function(event) {
+                if (event.target.matches('[id^="id_condition_ticker_"], #id_investment_ticker_2, #id_monthly_investment_2')) {
+                    clearError(event.target);
+                }
+            });
+
+            // 폼 제출 시 저장된 데이터로 채우기
+            function fillFormWithSavedData() {
+                if (Object.keys(formData).length > 0) {
+                    if (formData.investment_ticker_2 && formData.investment_ticker_2.trim() !== '') {
+                        addInvestment();
+                        document.getElementById('id_investment_ticker_2').value = formData.investment_ticker_2;
+                        document.getElementById('id_monthly_investment_2').value = formData.monthly_investment_2 || '0';
+                    }
+
+                    for (let i = 1; i <= 3; i++) {
+                        const conditionTicker = formData[`condition_ticker_${i}`];
+                        if (conditionTicker && conditionTicker.trim() !== '') {
+                            addCondition();
+                            document.getElementById(`id_condition_ticker_${i}`).value = conditionTicker;
+                            document.getElementById(`id_condition_type_${i}`).value = formData[`condition_type_${i}`] || 'specific';
+                            document.getElementById(`id_percent_${i}`).value = formData[`percent_${i}`] || '10';
+                            document.getElementById(`id_comparison_${i}`).value = formData[`comparison_${i}`] || 'above';
+                            document.getElementById(`id_priority_${i}`).value = formData[`priority_${i}`] || 'none';
+
+                            const conditionTypeSelect = document.getElementById(`id_condition_type_${i}`);
+                            if (conditionTypeSelect) {
+                                conditionTypeSelect.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    }
+                    updateConditionText();
+                }
+            }
+
+            fillFormWithSavedData();
+            updateConditionText();
+        });
+    </script>
+</body>
+</html>

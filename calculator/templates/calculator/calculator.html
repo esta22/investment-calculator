@@ -1,0 +1,682 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="naver-site-verification" content="bd0dd86fe074739832dd031f89f16d2dbd2f1475" />
+    <title>{% trans "월적립 주가수익률 계산기" %}</title>
+    <style>
+        /* 기존 스타일 유지 */
+        body {
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 오른쪽 상단 언어 선택기 스타일 - 모바일에서도 고정 */
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .language-selector select {
+            padding: 8px 12px;
+            border: 1px solid #3498db;
+            border-radius: 6px;
+            background: white;
+            color: #2c3e50;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .language-selector select:hover {
+            background: #f8f9ff;
+            border-color: #2980b9;
+        }
+
+        /* 개선된 네비게이션 바 스타일 - 2x2 그리드 */
+        .nav-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 25px 0;
+        }
+        .nav-item {
+            padding: 14px 10px;
+            background: white;
+            color: #3498db;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.25s ease;
+            text-align: center;
+            border: 1.5px solid #3498db;
+            box-shadow: 0 2px 6px rgba(52, 152, 219, 0.15);
+            font-size: 0.85em;
+        }
+        .nav-item:hover:not(.disabled) {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+        }
+        .nav-item.disabled {
+            background: #f8f9fa;
+            color: #adb5bd;
+            border-color: #dee2e6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .nav-item.active {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+        }
+
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-size: 0.9em;
+        }
+        input {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            background: white;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        button {
+            grid-column: 1 / -1;
+            padding: 14px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+        }
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        .result-box {
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 25px;
+            background: #fafafa;
+        }
+        .result-box h2 {
+            margin-top: 0;
+            font-size: 1.4em;
+            color: #2c3e50;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+            font-weight: 600;
+        }
+        .terminal-record {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+            line-height: 1.6;
+            background: white;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        .terminal-record:hover {
+            background: #f5f9ff;
+        }
+        .terminal-record:last-child {
+            border-bottom: none;
+        }
+        .profit-positive {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        .profit-negative {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 14px;
+            border-radius: 6px;
+            margin: 18px 0;
+            font-size: 0.95em;
+            border-left: 4px solid #e53935;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 14px;
+            border-radius: 6px;
+            margin: 18px 0;
+            font-size: 0.95em;
+            border-left: 4px solid #43a047;
+        }
+        .final-result {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        .final-result h3 {
+            margin-top: 0;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            padding-bottom: 15px;
+            font-size: 1.4em;
+            text-align: center;
+            color: #fff;
+            font-weight: 600;
+        }
+        .final-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 18px;
+        }
+        .stat-item {
+            background: rgba(255, 255, 255, 0.12);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-item:hover {
+            transform: translateY(-3px);
+        }
+        .stat-item .label {
+            font-size: 0.85em;
+            opacity: 0.85;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .stat-item .value {
+            font-size: 1.1em;
+            font-weight: 600;
+            display: block;
+        }
+        .final-profit {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 18px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .final-profit .value {
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+
+        /* 최종 평가 행 스타일 추가 */
+        .final-evaluation {
+            background: #e8f4fd;
+            border-left: 4px solid #3498db;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        /* 모바일 최적화 */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            .container {
+                padding: 25px;
+                position: relative; /* 모바일에서도 컨테이너 relative 유지 */
+            }
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 20px;
+                margin-top: 40px; /* 언어 선택기 공간 확보 */
+            }
+            /* 언어 선택기 - 모바일에서도 오른쪽 상단 고정 */
+            .language-selector {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 1000;
+            }
+            .language-selector select {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+            .nav-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 25px;
+                row-gap: 10px;
+                margin: 20px 20px 20px 0;
+            }
+            .nav-item {
+                width: 100%;
+                padding: 10px 8px;
+                font-size: 0.8em;
+                margin: 0;
+            }
+            .form-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            input {
+                padding: 10px;
+                font-size: 0.95em;
+            }
+            button {
+                padding: 13px;
+                font-size: 1em;
+            }
+            .result-box {
+                padding: 15px;
+            }
+            .result-box h2 {
+                font-size: 1.3em;
+            }
+            .terminal-record {
+                font-size: 0.85em;
+                padding: 10px 8px;
+            }
+            .final-result {
+                padding: 18px;
+            }
+            .final-result h3 {
+                font-size: 1.2em;
+            }
+            .final-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            .stat-item {
+                padding: 12px;
+            }
+            .stat-item .value {
+                font-size: 1em;
+            }
+            .final-profit {
+                padding: 15px;
+            }
+            .final-profit .value {
+                font-size: 1.2em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .terminal-record {
+                font-size: 0.8em;
+            }
+            .final-stats {
+                grid-template-columns: 1fr;
+            }
+            .nav-item {
+                font-size: 0.75em;
+                padding: 10px 6px;
+            }
+            .nav-container {
+                gap: 10px;
+            }
+            /* 매우 작은 화면에서도 언어 선택기 유지 */
+            .language-selector {
+                top: 10px;
+                right: 10px;
+            }
+            .language-selector select {
+                padding: 5px 8px;
+                font-size: 0.75em;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .nav-container {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            .nav-item {
+                min-width: 120px;
+                padding: 12px 20px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 오른쪽 상단 언어 선택기 -->
+        <div class="language-selector">
+            <select id="language-select" onchange="changeLanguage(this.value)">
+                <option value="ko" {% if LANGUAGE_CODE == 'ko' %}selected{% endif %}>한국어</option>
+                <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+            </select>
+        </div>
+
+        <h1>📈 {% trans "월적립 주가수익률 계산기" %}</h1>
+
+        <!-- 네비게이션 바 - 언어 prefix를 포함한 URL 사용 -->
+        <div class="nav-container">
+            <a href="{% url 'calculator' %}" class="nav-item active" id="home-link">{% trans "홈" %}</a>
+            <a href="{% url 'stock2' %}" class="nav-item" id="multi-calc-link">{% trans "2종목 이상 계산기" %}</a>
+            <a href="#" class="nav-item disabled">{% trans "투자지표 기준 계산기" %}</a>
+            <a href="https://greenwoodinvest.tistory.com/1" class="nav-item" target="_blank">{% trans "피드백" %}</a>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="id_ticker">📊 {% trans "티커 코드" %}</label>
+                    <input type="text" name="ticker" id="id_ticker" placeholder="{% trans '예: AAPL, TSLA, MSFT' %}" required value="{{ form.ticker.value|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_initial_capital">💰 {% trans "초기자금 (원)" %}</label>
+                    <input type="number" name="initial_capital" id="id_initial_capital" placeholder="{% trans '예: 1000000' %}" required value="{{ form.initial_capital.value|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_monthly_investment">💵 {% trans "월적립액 (원)" %}</label>
+                    <input type="number" name="monthly_investment" id="id_monthly_investment" placeholder="{% trans '예: 100000' %}" required value="{{ form.monthly_investment.value|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_start_date">📅 {% trans "시작일" %}</label>
+                    <input type="date" name="start_date" id="id_start_date" required value="{{ form.start_date.value|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_end_date">📅 {% trans "종료일" %}</label>
+                    <input type="date" name="end_date" id="id_end_date" required value="{{ form.end_date.value|default:'' }}">
+                </div>
+                <button type="submit">🚀 {% trans "계산하기" %}</button>
+            </div>
+        </form>
+
+        {% if error %}
+            <div class="error">
+                ❌ {{ error }}
+            </div>
+        {% endif %}
+
+        {% if update_message %}
+            <div class="success">
+                ✅ {{ update_message }}
+            </div>
+        {% endif %}
+
+<!-- 계산 결과 부분 단순화 -->
+{% if records %}
+<div class="result-box">
+    <h2>💰 {% trans "계산 결과" %} ({{ ticker }})</h2>
+
+    <div class="terminal-records">
+        {% for record in records %}
+            <div class="terminal-record">
+                {{ record.date }} {{ record.action }} {% trans "구매" %},
+                {% trans "주가" %} ${{ record.price|floatformat:2 }},
+                {% trans "수량" %} {{ record.shares_held|floatformat:0 }}{% trans "주" %},
+
+                {% if is_english %}
+                    {% trans "평가금액" %} ${{ record.stock_value|floatformat:2 }},
+                    {% trans "현금" %} ${{ record.cash|floatformat:2 }},
+                {% else %}
+                    {% trans "평가금액" %} <span class="korean-currency" data-amount="{{ record.stock_value_krw }}">₩{{ record.stock_value_krw|floatformat:0 }}</span>,
+                    {% trans "현금" %} <span class="korean-currency" data-amount="{{ record.cash }}">₩{{ record.cash_krw|floatformat:0 }}</span>,
+                {% endif %}
+
+                {% trans "총 수익률" %} <span class="{% if record.profit_rate >= 0 %}profit-positive{% else %}profit-negative{% endif %}">{{ record.profit_rate|floatformat:2 }}%</span>
+            </div>
+        {% endfor %}
+
+        {% if final_result %}
+            <div class="terminal-record final-evaluation">
+                {{ final_result.end_date_price_date }} {{ ticker }} {% trans "종료일 기준 주가" %}: ${{ final_result.end_date_price|floatformat:2 }},
+                {% trans "수량" %} {{ final_result.final_shares_held|floatformat:0 }}{% trans "주" %},
+
+                {% if is_english %}
+                    {% trans "평가금액" %} ${{ final_result.final_stock_value|floatformat:2 }},
+                    {% trans "현금" %} ${{ final_result.final_cash|floatformat:2 }},
+                {% else %}
+                    {% trans "평가금액" %} <span class="korean-currency" data-amount="{{ final_result.final_stock_value_krw }}">₩{{ final_result.final_stock_value_krw|floatformat:0 }}</span>,
+                    {% trans "현금" %} <span class="korean-currency" data-amount="{{ final_result.final_cash_krw }}">₩{{ final_result.final_cash_krw|floatformat:0 }}</span>,
+                {% endif %}
+
+                {% trans "총 수익률" %} <span class="{% if final_result.final_profit_rate >= 0 %}profit-positive{% else %}profit-negative{% endif %}">{{ final_result.final_profit_rate|floatformat:2 }}%</span>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if final_result %}
+        <div class="final-result">
+            <h3>🎯 {% trans "최종 투자 결과" %}</h3>
+
+            <div class="final-stats">
+                <div class="stat-item">
+                    <div class="label">{% trans "총 평가금액" %}</div>
+                    <div class="value {% if is_english %}number-format{% else %}korean-currency{% endif %}" {% if not is_english %}data-amount="{% if is_english %}{{ final_result.final_stock_value }}{% else %}{{ final_result.final_stock_value_krw }}{% endif %}"{% endif %}>
+                        {% if is_english %}
+                            ${{ final_result.final_stock_value|floatformat:2 }}
+                        {% else %}
+                            ₩{{ final_result.final_stock_value_krw|floatformat:0 }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">{% trans "현금 보유액" %}</div>
+                    <div class="value {% if is_english %}number-format{% else %}korean-currency{% endif %}" {% if not is_english %}data-amount="{% if is_english %}{{ final_result.final_cash }}{% else %}{{ final_result.final_cash_krw }}{% endif %}"{% endif %}>
+                        {% if is_english %}
+                            ${{ final_result.final_cash|floatformat:2 }}
+                        {% else %}
+                            ₩{{ final_result.final_cash_krw|floatformat:0 }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">{% trans "총 자산" %}</div>
+                    <div class="value {% if is_english %}number-format{% else %}korean-currency{% endif %}" {% if not is_english %}data-amount="{% if is_english %}{{ final_result.final_total_assets }}{% else %}{{ final_result.final_total_assets_krw }}{% endif %}"{% endif %}>
+                        {% if is_english %}
+                            ${{ final_result.final_total_assets|floatformat:2 }}
+                        {% else %}
+                            ₩{{ final_result.final_total_assets_krw|floatformat:0 }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">{% trans "총 투자액" %}</div>
+                    <div class="value {% if is_english %}number-format{% else %}korean-currency{% endif %}" {% if not is_english %}data-amount="{% if is_english %}{{ final_result.final_total_investment }}{% else %}{{ final_result.final_total_investment_krw }}{% endif %}"{% endif %}>
+                        {% if is_english %}
+                            ${{ final_result.final_total_investment|floatformat:2 }}
+                        {% else %}
+                            ₩{{ final_result.final_total_investment_krw|floatformat:0 }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="final-profit">
+                <div class="label">{% trans "총 수익률" %}</div>
+                <div class="value {% if final_result.final_profit_rate >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    {{ final_result.final_profit_rate|floatformat:2 }}%
+                </div>
+                <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
+                    <span class="{% if final_result.final_profit_amount >= 0 %}profit-positive{% else %}profit-negative{% endif %}" style="font-weight: 600;">
+                        {% if final_result.final_profit_amount >= 0 %}
+                            {% trans "수익" %}:
+                        {% else %}
+                            {% trans "손실" %}:
+                        {% endif %}
+                    </span>
+                    <span class="{% if is_english %}number-format{% else %}korean-currency{% endif %}" {% if not is_english %}data-amount="{% if is_english %}{{ final_result.final_profit_amount }}{% else %}{{ final_result.final_profit_amount_krw }}{% endif %}"{% endif %} style="font-weight: 600;">
+                        {% if is_english %}
+                            ${{ final_result.final_profit_amount|floatformat:2 }}
+                        {% else %}
+                            ₩{{ final_result.final_profit_amount_krw|floatformat:0 }}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+    // 언어 변경 함수 (경로 방식)
+    function changeLanguage(langCode) {
+        const currentPath = window.location.pathname;
+        let newPath = '';
+
+        // 현재 경로에서 언어 코드 제거
+        if (currentPath.startsWith('/en/') || currentPath.startsWith('/ko/')) {
+            // 기존 언어 코드 제거
+            const pathWithoutLang = currentPath.substring(3);
+            newPath = '/' + langCode + pathWithoutLang;
+        } else if (currentPath === '/en' || currentPath === '/ko') {
+            // 루트 경로인 경우
+            newPath = '/' + langCode;
+        } else {
+            // 언어 코드가 없는 경우
+            newPath = '/' + langCode + currentPath;
+        }
+
+        // 루트 경로 처리
+        if (newPath === '/' + langCode) {
+            newPath = '/' + langCode + '/';
+        }
+
+        // 쿼리 파라미터와 해시 유지
+        const searchParams = window.location.search;
+        const hash = window.location.hash;
+
+        // 페이지 이동
+        window.location.href = newPath + searchParams + hash;
+    }
+
+    // 페이지 로드 시 실행
+    document.addEventListener('DOMContentLoaded', function() {
+        // 언어 선택박스 동기화
+        const currentPath = window.location.pathname;
+        let currentLang = 'ko';
+
+        if (currentPath.startsWith('/en/') || currentPath === '/en') {
+            currentLang = 'en';
+        } else if (currentPath.startsWith('/ko/') || currentPath === '/ko') {
+            currentLang = 'ko';
+        }
+
+        const languageSelect = document.getElementById('language-select');
+        if (languageSelect) {
+            languageSelect.value = currentLang;
+        }
+
+        // 2. 오늘 날짜로 기본값 설정 (기존 코드 유지)
+        const today = new Date();
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(today.getFullYear() - 1);
+
+        const startDateInput = document.getElementById('id_start_date');
+        if (startDateInput && !startDateInput.value) {
+            startDateInput.value = oneYearAgo.toISOString().split('T')[0];
+        }
+
+        const endDateInput = document.getElementById('id_end_date');
+        if (endDateInput && !endDateInput.value) {
+            endDateInput.value = today.toISOString().split('T')[0];
+        }
+
+        // 3. 한국식 통화 단위 변환 함수 (소수점 제거)
+        function formatKoreanCurrency(amount) {
+            if (amount === 0) return '0원';
+
+            // 소수점 제거하고 정수로 변환
+            const integerAmount = Math.round(amount);
+
+            if (integerAmount < 10000) return integerAmount.toLocaleString() + '원';
+
+            const units = ['', '만', '억', '조'];
+            let result = '';
+            let temp = Math.abs(integerAmount);
+
+            for (let i = 0; i < units.length; i++) {
+                if (temp === 0) break;
+
+                const part = temp % 10000;
+                temp = Math.floor(temp / 10000);
+
+                if (part > 0) {
+                    if (i === 0) {
+                        result = part + units[i] + result;
+                    } else {
+                        result = part + units[i] + ' ' + result;
+                    }
+                }
+            }
+
+            result = result.trim();
+            if (integerAmount < 0) {
+                result = '-' + result;
+            }
+
+            return result + '원';
+        }
+
+        // 통화 단위 변환 적용 (한국어일 때만)
+        document.querySelectorAll('.korean-currency').forEach(element => {
+            const amount = parseFloat(element.getAttribute('data-amount'));
+            if (!isNaN(amount)) {
+                const formatted = formatKoreanCurrency(amount);
+                element.textContent = formatted;
+
+                // 원본 데이터를 title로 보존
+                element.setAttribute('title', `₩${Math.round(amount).toLocaleString()}`);
+            }
+        });
+    });
+</script>
+</body>
+</html>
